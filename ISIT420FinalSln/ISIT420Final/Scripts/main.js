@@ -1,6 +1,5 @@
 ﻿$(document).ready(function () {
     getAllYears();
-    getAllSongTitles();
 });
 
 const noDataReturned = "no data";
@@ -12,19 +11,29 @@ const peDataType = "PE" // Positive Effect
 function getAllYears() {
     $.getJSON("api/worldhealth/GetAllYears")
         .done(function (data) {
-            // On success, 'data' contains a list of all years 
+            // On success, 'data' contains a list of all years for U.S. only
             $.each(data, function (index, value) {
-                $('#selectYear').append(`<option>${value.Year}</option>`);
+                $('#selectYear').append(`<option>${value}</option>`);
             });
+
+            getAllSongTitlesForYear();
         });
 }
 
-function getAllSongTitles() {
-    $.getJSON("api/songs/GetAllSongTitles")
+$(document).on('change', '#selectYear', function () {
+    // clear songTitle options when different year is selected
+    $('#selectSong').children('option').remove();
+
+    getAllSongTitlesForYear();
+});
+
+function getAllSongTitlesForYear() {
+    var year = parseInt($('#selectYear option:selected').text());
+    $.getJSON("api/songs/GetAllSongTitlesForYear?year=" + year)
         .done(function (data) {
             // On success, 'data' contains a list of all Song Titles
             $.each(data, function (index, value) {
-                $('#selectSong').append(`<option>${value.SongTitle}</option>`);
+                $('#selectSong').append(`<option>${value}</option>`);
             });
         });
 }

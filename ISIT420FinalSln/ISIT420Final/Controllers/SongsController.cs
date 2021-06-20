@@ -8,17 +8,46 @@ namespace ISIT420Final.Controllers
 {
     public class SongsController : ApiController
     {
-        ISIT420FinalEntitiesConnection myCollection = new ISIT420FinalEntitiesConnection();
-
         [HttpGet]
-        public IHttpActionResult GetAllSongTitles()
+        public IHttpActionResult GetAllSongTitlesForYear(int year)
         {
-            var allSongTitles = (from song in myCollection.Songs
-                                 where song.Explicit.ToLower().Equals("true")
-                                 || song.Explicit.ToLower().Equals("false")
-                                 select new { song.SongTitle }).Distinct().OrderByDescending(song => song);
+            ISIT420FinalEntitiesConnection myCollection = new ISIT420FinalEntitiesConnection();
 
-            return Ok(allSongTitles.ToList());
+            var songInfo = from song in myCollection.Songs
+                           join album in myCollection.Albums on song.AlbumID equals album.AlbumID
+                           where song.Explicit.Equals("True")
+                                 || song.Explicit.Equals("False")
+                           select new { album.ReleaseDate, song.SongTitle };
+
+            List<SongDetails> songDetailList = new List<SongDetails>();
+
+            foreach (var song in songInfo.ToList())
+            {
+                // ReleaseDate from query needs to be parsed to extract ReleaseDate year value
+                // to compare against the year passed in from API call
+                int newSongYear = DateTime.Parse(song.ReleaseDate.ToString()).Year;
+
+                if (newSongYear == year)
+                {
+                    var newSongDetail = new SongDetails
+                    {
+                        SongYear = newSongYear,
+                        SongTitle = song.SongTitle
+                    };
+
+                    songDetailList.Add(newSongDetail);
+                }
+            }
+
+            var songListForYear = songDetailList.Where(s => s.SongYear == year).Select(s => s.SongTitle).OrderBy(songTitle => songTitle);
+
+            return Ok(songListForYear);
         }
+    }
+
+    class SongDetails
+    {
+        public int SongYear { get; set; }
+        public string SongTitle { get; set; }
     }
 }
